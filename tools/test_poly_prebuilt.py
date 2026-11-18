@@ -38,7 +38,7 @@ class PolyPrebuilt(unittest.TestCase):
         self.root.mkdir()
         self.rel.mkdir()
         self.eng = self.root / setup.ENGINE_POLY_DIR
-        for p in (mock.patch.object(setup, "ROOT", self.root), mock.patch.object(setup, "WIN", True),
+        for p in (mock.patch.object(setup, "ROOT", self.root), mock.patch.object(setup, "WIN", False),
                   mock.patch.object(setup, "POLY_PREBUILT_URL", str(self.rel)),
                   mock.patch.object(setup, "source_hash", lambda parts: SRC),
                   mock.patch.object(setup, "cpu_info", lambda: ("an AVX2 CPU", True, False)),
