@@ -1,0 +1,81 @@
+name: Linux CUDA 13 PolyStrata prebuilt
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "setup.py"
+      - "CMakeLists.txt"
+      - "cmake/**"
+      - "src/**"
+      - "include/**"
+      - "third_party/ggml/**"
+      - "tools/vision/**"
+      - "tools/make_poly_release_linux.py"
+      - "tools/test_poly_prebuilt.py"
+      - ".github/workflows/polystrata-linux-prebuilt.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: polystrata-linux-prebuilt-\${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    name: Build Linux CUDA 13.0 prebuilt (SM75)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    container:
+      image: nvidia/cuda:13.0.0-devel-ubuntu24.04
+    steps:
+      - name: Install Linux build prerequisites
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            git python3 python3-venv cmake ninja-build build-essential \
+            binutils file libcurl4-openssl-dev libssl-dev libnuma-dev zlib1g-dev
+          rm -rf /var/lib/apt/lists/*
+
+      - name: Check out the exact source commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify Python and packaging code
+        run: |
+          python3 --version
+          nvcc --version
+          python3 -m py_compile setup.py tools/make_poly_release_linux.py
+          python3 -m unittest tools.test_poly_prebuilt
+
+      - name: Build, link-check and package SM75 Linux binaries
+        env:
+          CUDA_HOME: /usr/local/cuda
+          CUDAToolkit_ROOT: /usr/local/cuda
+        run: |
+          python3 tools/make_poly_release_linux.py dist --archs 75
+
+      - name: Read versioned release tag
+        id: release
+        run: |
+          test -s dist/release-tag.txt
+          echo "tag_name=$(cat dist/release-tag.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the verified build as a versioned GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: \${{ secrets.GITHUB_TOKEN }}
+          tag_name: \${{ steps.release.outputs.tag_name }}
+          name: PolyStrata Linux CUDA 13.0 SM75 (\${{ github.sha }})
+          body_path: dist/release-notes.md
+          files: |
+            dist/strata-poly-linux-x64-*.zip
+            dist/SHA256SUMS
+          draft: false
+          prerelease: false
+          make_latest: false
+          overwrite_files: true
+          fail_on_unmatched_files: true
