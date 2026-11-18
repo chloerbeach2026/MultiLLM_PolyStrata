@@ -67,6 +67,9 @@ def main() -> int:
     if 75 not in archs:
         raise SystemExit("the first project release must include SM75 for the Kaggle Tesla T4 target")
 
+    # GitHub's container job may run as root while checkout created the workspace as the runner user.
+    # Mark this exact checkout safe before querying its status or commit metadata.
+    run_checked(["git", "config", "--global", "--add", "safe.directory", str(ROOT)])
     dirty = run_checked(["git", "status", "--porcelain", "--ignored", "--",
                          *setup.ENGINE_SOURCES, *setup.VISION_SOURCES])
     if dirty.strip():
