@@ -20,7 +20,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: polystrata-linux-prebuilt-\${{ github.ref }}
+  group: polystrata-linux-prebuilt-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -67,9 +67,9 @@ jobs:
       - name: Publish the verified build as a versioned GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          token: \${{ secrets.GITHUB_TOKEN }}
-          tag_name: \${{ steps.release.outputs.tag_name }}
-          name: PolyStrata Linux CUDA 13.0 SM75 (\${{ github.sha }})
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ steps.release.outputs.tag_name }}
+          name: PolyStrata Linux CUDA 13.0 SM75 (${{ github.sha }})
           body_path: dist/release-notes.md
           files: |
             dist/strata-poly-linux-x64-*.zip
