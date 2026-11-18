@@ -71,7 +71,8 @@ class PolyPrebuilt(unittest.TestCase):
 
     def test_none_for_a_cpu_without_avx2(self):
         release(self.rel)
-        with mock.patch.object(setup, "cpu_info", lambda: ("an older CPU", False, False)):
+        with mock.patch.object(setup, "cpu_info", lambda: ("an older CPU", False, False)), \
+                mock.patch.object(setup, "cpu_floor", lambda avx2: "avx"):
             self.assertFalse(setup.get_poly_prebuilt(GPU))
 
     def test_a_failed_pip_leaves_the_engine_there(self):
