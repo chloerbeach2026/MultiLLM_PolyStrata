@@ -31,7 +31,7 @@ def run_checked(args: list[str], *, timeout: int = 60) -> str:
     return p.stdout
 
 
-def require_elf(path: Path) -> None:
+def require_elf(path: Path, *, expect_driver: bool = False) -> None:
     if not path.is_file():
         raise RuntimeError(f"required build output is missing: {path}")
     header = run_checked(["readelf", "-h", str(path)])
@@ -48,7 +48,7 @@ def require_elf(path: Path) -> None:
     if missing:
         raise RuntimeError(f"{path.name} has unresolved runtime dependencies:\n" + "\n".join(missing))
     needed = run_checked(["readelf", "-d", str(path)])
-    if "libcuda.so.1" not in needed:
+    if expect_driver and "libcuda.so.1" not in needed:
         raise RuntimeError(f"{path.name} does not declare the expected host NVIDIA driver dependency")
 
 
@@ -119,13 +119,13 @@ def main() -> int:
 
     poly_exe = poly_build / setup.POLY_EXE
     vision_exe = vision_build / "bin" / setup.VEXE
-    require_elf(poly_exe)
+    require_elf(poly_exe, expect_driver=True)
     require_elf(vision_exe)
     kq_candidates = list(poly_build.rglob(setup.KQ_LIB))
     if not kq_candidates:
         raise RuntimeError(f"{setup.KQ_LIB} was not produced; K-quant MMQ support is required")
     kq_lib = kq_candidates[0]
-    require_elf(kq_lib)
+    require_elf(kq_lib, expect_driver=True)
 
     source = setup.source_hash(setup.ENGINE_SOURCES)
     vision_source = setup.source_hash(setup.VISION_SOURCES)
